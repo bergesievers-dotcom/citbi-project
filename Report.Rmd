@@ -1,0 +1,352 @@
+---
+title: "Data Preparation"
+author: "Berge Sievers"
+date: "2025-10-09"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Part I
+
+For the missing data, the variables does the patient has amnesia for the event and a headache at the time of ED evaluation, which were represented by 91 to indicate a pre-verbal patient or children who haven’t started speaking yet. Moreover, when the patient is intubated or otherwise unable to give an understandable verbal response, a non-verbal is marked as 91. On the other hand, 92 in the duration of loss of consciousness and the duration of post-traumatic seizure are not applicable and are to be treated as missing values. This means that for every variable that has a 91 or 92, the values will be replaced with NAs. A variable like the duration of post-traumatic seizure has over 95% of values as 92, which is not applicable; therefore, this variable is removed from the dataset. Additionally, all missing values were removed from the Dataset. 
+
+We changed the variable names to make sure that they are understandable and match the information given in the data dictionary.  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+# Load necessary libraries:
+# ...
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readr)
+citbi <- read_csv("C:/Users/ThinkPad/Downloads/citbi.csv")
+# We preview the dataset
+glimpse(citbi)
+```
+
+## Part I: Data Cleaning
+```{r}
+vars_with_91 <- c("Amnesia_verb", "HA_verb")
+vars_with_92 <- c("LocLen", "SeizLen")
+citbi_clean <- citbi %>%
+  mutate(
+    across(all_of(vars_with_91), ~ na_if(., 91)),
+    across(all_of(vars_with_92), ~ na_if(., 92))
+  )
+citbi_clean
+```
+
+# Renaming variable labels
+```{r}
+citbi_clean <- citbi_clean %>%
+  rename(
+    patient_number = PatNum,
+    amnesia_event = Amnesia_verb,
+    loc_duration = LocLen,
+    seizure = Seiz,
+    seizure_duration = SeizLen,
+    normal_activity = ActNorm,
+    headache = HA_verb,
+    vomiting = Vomit,
+    dizziness = Dizzy,
+    gcs_eye = GCSEye,
+    gcs_verbal = GCSVerbal,
+    gcs_motor = GCSMotor,
+    gcs_total = GCSTotal,
+    altered_mental_status = AMS,
+    skull_fracture_palpable = SFxPalp,
+    fontanelle_bulging = FontBulg,
+    hematoma = Hema,
+    clavicle_trauma = Clav,
+    neurological_deficit = NeuroD,
+    other_significant_injury = OSI,
+    ct_planned = CTForm1,
+    age_months = AgeInMonth,
+    gender = Gender,
+    ct_done = CTDone,
+    death_tbi = DeathTBI,
+    citbi_outcome = PosIntFinal
+  )
+```
+
+```{r}
+# identification of variable types
+## we started by converting the labels to factors
+citbi_clean <- citbi_clean %>%
+  mutate(
+    amnesia_event = factor(amnesia_event,
+                           levels = c(0, 1),
+                           labels = c("No", "Yes")),
+    loc_duration = factor(loc_duration,
+                          levels = c(1, 2, 3, 4),
+                          labels = c("<5 sec", "5 sec–<1 min", "1–5 min", ">5 min"),
+                          ordered = TRUE),
+    seizure = factor(seizure,
+                     levels = c(0, 1),
+                     labels = c("No", "Yes")),
+    seizure_duration = factor(seizure_duration,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("<1 min", "1–<5 min", "5–15 min", ">15 min"),
+                              ordered = TRUE),
+    normal_activity = factor(normal_activity,
+                             levels = c(0, 1),
+                             labels = c("No", "Yes")),
+    headache = factor(headache,
+                      levels = c(0, 1),
+                      labels = c("No", "Yes")),
+    vomiting = factor(vomiting,
+                      levels = c(0, 1),
+                      labels = c("No", "Yes")),
+    dizziness = factor(dizziness,
+                       levels = c(0, 1),
+                       labels = c("No", "Yes")),
+    gcs_eye = factor(gcs_eye,
+                     levels = c(1, 2, 3, 4),
+                     labels = c("None", "Pain", "Verbal", "Spontaneous"),
+                     ordered = TRUE),
+    gcs_verbal = factor(gcs_verbal,
+                        levels = c(1, 2, 3, 4, 5),
+                        labels = c("None", "Incomprehensible sounds", "Inappropriate words",
+                                   "Confused", "Oriented"),
+                        ordered = TRUE),
+    gcs_motor = factor(gcs_motor,
+                       levels = c(1, 2, 3, 4, 5, 6),
+                       labels = c("None", "Abnormal extension", "Abnormal flexure",
+                                  "Withdraws to pain", "Localizes pain", "Follows commands"),
+                       ordered = TRUE),
+    altered_mental_status = factor(altered_mental_status,
+                                   levels = c(0, 1),
+                                   labels = c("No", "Yes")),
+    skull_fracture_palpable = factor(skull_fracture_palpable,
+                                     levels = c(0, 1, 2),
+                                     labels = c("No", "Yes", "Unclear")),
+    fontanelle_bulging = factor(fontanelle_bulging,
+                                levels = c(0, 1),
+                                labels = c("No/Closed", "Yes")),
+    hematoma = factor(hematoma,
+                      levels = c(0, 1),
+                      labels = c("No", "Yes")),
+    clavicle_trauma = factor(clavicle_trauma,
+                             levels = c(0, 1),
+                             labels = c("No", "Yes")),
+    neurological_deficit = factor(neurological_deficit,
+                                  levels = c(0, 1),
+                                  labels = c("No", "Yes")),
+    other_significant_injury = factor(other_significant_injury,
+                                      levels = c(0, 1),
+                                      labels = c("No", "Yes")),
+    ct_planned = factor(ct_planned,
+                        levels = c(0, 1),
+                        labels = c("No", "Yes")),
+    gender = factor(gender,
+                    levels = c(1, 2),
+                    labels = c("Male", "Female")),
+    ct_done = factor(ct_done,
+                     levels = c(0, 1),
+                     labels = c("No", "Yes")),
+    death_tbi = factor(death_tbi,
+                       levels = c(0, 1),
+                       labels = c("No", "Yes")),
+    citbi_outcome = factor(citbi_outcome,
+                           levels = c(0, 1),
+                           labels = c("No", "Yes"))
+  )
+```
+
+```{r}
+# We made sure continuous variables remained as numeric
+citbi_clean <- citbi_clean %>%
+  mutate(
+    patient_number = as.numeric(patient_number),
+    age_months = as.numeric(age_months),
+    gcs_total = as.numeric(gcs_total)
+  )
+
+```
+
+## Part II: Exploratory Data Analysis (EDA)
+
+```{r}
+missing_summary <- citbi_clean %>%
+  summarise(across(everything(),
+                   list(n_missing = ~sum(is.na(.)),
+                        pct_missing = ~mean(is.na(.)) * 100))) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = c("variable", ".value"),
+    names_sep = "_"
+  )
+missing_summary
+```
+
+
+
+```{r}
+# for Numerical Values
+# Summary stats for numeric variables
+citbi_clean %>%
+  select(age_months, gcs_total) %>%
+  summary()
+# for categorical variables
+# Select categorical variables
+categorical_vars <- c("amnesia_event", "seizure", "normal_activity",
+                      "headache", "vomiting", "dizziness", "altered_mental_status",
+                      "skull_fracture_palpable", "fontanelle_bulging", "hematoma",
+                      "clavicle_trauma", "neurological_deficit", "other_significant_injury",
+                      "ct_planned", "ct_done", "death_tbi", "citbi_outcome", "gender")
+
+# Frequency tables
+lapply(citbi_clean[categorical_vars], table, useNA = "ifany")
+```
+
+# 5
+
+```{r}
+
+library(ggplot2)
+# We perform the histogram of patient ages in months
+ggplot(citbi_clean, aes(x = age_months)) +
+  geom_histogram(binwidth = 12, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of Patient Ages in Months",
+       x = "Age (Months)", y = "Count") +
+  theme_minimal()
+```
+
+# 6
+```{r}
+
+summary_table <- citbi_clean %>%
+  group_by(loc_duration, citbi_outcome) %>%
+  summarise(
+    mean_age_months = mean(age_months, na.rm = TRUE),
+    mean_gcs_total = mean(gcs_total, na.rm = TRUE),
+    count = n()
+  ) %>%
+  arrange(loc_duration, citbi_outcome)
+
+summary_table
+```
+
+# 7
+
+```{r}
+# Side-by-side bar chart
+library(ggplot2)
+
+ggplot(citbi_clean, aes(x = loc_duration, fill = citbi_outcome)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Loss of Consciousness Duration by ciTBI Outcome",
+    x = "Length of Loss of Consciousness",
+    y = "Count of Patients",
+    fill = "ciTBI Outcome"
+  ) +
+  theme_minimal()
+
+```
+# 8
+
+```{r}
+citbi_clean <- citbi_clean %>%
+  mutate(age_years = floor(age_months / 12))
+```
+
+
+# (a) Stacked normalized bar chart: proportion of ciTBI by age
+
+```{r}
+ggplot(citbi_clean, aes(x = age_years, fill = citbi_outcome)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Proportion of ciTBI by Age",
+    x = "Age (years)",
+    y = "Proportion",
+    fill = "ciTBI Outcome"
+  ) +
+  theme_minimal()
+
+```
+
+
+
+# (b) Stacked normalized bar chart faceted by GCS total)
+
+
+
+```{r}
+citbi_clean <- citbi_clean %>%
+  mutate(age_years = floor(age_months / 12))
+ggplot(citbi_clean, aes(x = age_years, fill = citbi_outcome)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ gcs_total) +
+  labs(
+    title = "Proportion of ciTBI by Age, Faceted by GCS Score",
+    x = "Age (years)",
+    y = "Proportion",
+    fill = "ciTBI Outcome"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+# (c) Stacked bar chart of counts faceted by GCS total
+
+
+
+```{r}
+ggplot(citbi_clean, aes(x = age_years, fill = citbi_outcome)) +
+  geom_bar(position = "stack") +
+  facet_wrap(~ gcs_total) +
+  labs(
+    title = "Number of Patients with ciTBI Across Age (Faceted by GCS Score)",
+    x = "Age (Years)",
+    y = "Number of Patients",
+    fill = "ciTBI Outcome"
+  ) +
+  theme_minimal()
+
+
+```
+
+# 9
+
+
+```{r}
+ggplot(citbi_clean, aes(x = age_months, y = gcs_total)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_jitter(width = 0.5, height = 0.5) +  # avoid overplotting
+  labs(
+    title = "Scatter Plot of Age vs GCS Total",
+    x = "Age (Months)",
+    y = "GCS Total Score"
+  ) +
+  theme_minimal()
+```
+
+# 10
+
+
+```{r}
+summary_stats <- citbi_clean %>%
+  group_by(loc_duration, citbi_outcome) %>%
+  summarise(
+    mean_gcs = mean(gcs_total, na.rm = TRUE),
+    mean_age_months = mean(age_months, na.rm = TRUE),
+    count = n()
+  ) %>%
+  arrange(loc_duration, citbi_outcome)
+
+summary_stats
+
+```
+
+
+```
+
+## R Markdown
+
